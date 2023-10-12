@@ -189,3 +189,12 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// buddy.c
+void bd_init(void *, void *);
+
+void bd_free(void *);
+
+void *bd_malloc(uint64);
+
+#include "list.h"
