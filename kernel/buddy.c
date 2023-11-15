@@ -239,7 +239,6 @@ int bd_initfree_pair_left(int k, int bi) {
   if (buddy_bit_isset(bd_sizes[k].buddy_xor, bi)) {
     // one of the pair is free
     free = BLK_SIZE(k);
-    printf("l\n");
     lst_push(&bd_sizes[k].free, addr(k, buddy));  // put bi on free list
   }
   return free;
@@ -250,7 +249,6 @@ int bd_initfree_pair_right(int k, int bi) {
   if (buddy_bit_isset(bd_sizes[k].buddy_xor, bi)) {
     // one of the pair is free
     free = BLK_SIZE(k);
-    printf("r\n");
     lst_push(&bd_sizes[k].free, addr(k, bi));  // put bi on free list
   }
   return free;
@@ -314,18 +312,14 @@ void bd_init(void *base, void *end) {
   memset(bd_sizes, 0, sizeof(Sz_info) * nsizes);
 
   // initialize free list and allocate the alloc array for each size k
-  int res = 0;
   for (int k = 0; k < nsizes; k++) {
     lst_init(&bd_sizes[k].free);
     sz = sizeof(char) * ROUNDUP(NBLK(k), 8) / 8;
     sz = sz / 2 > 0 ? sz / 2 : 1;
-    printf("size: %d\n", sz);
-    res+=sz;
     bd_sizes[k].buddy_xor = p;
     memset(bd_sizes[k].buddy_xor, 0, sz);
     p += sz;
   }
-  printf("res: %d\n", res);
 
   // allocate the split array for each size k, except for k = 0, since
   // we will not split blocks of size k = 0, the smallest size.

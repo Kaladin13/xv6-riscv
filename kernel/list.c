@@ -54,3 +54,31 @@ lst_print(struct list *lst)
   }
   printf("\n");
 }
+
+void proc_lst_init(struct proc_list *lst) {
+  lst->next = lst;
+  lst->prev = lst;
+}
+
+void proc_lst_remove(struct proc_list *e) {
+  e->prev->next = e->next;
+  e->next->prev = e->prev;
+}
+
+void proc_lst_push(struct proc_list *lst, struct proc_list *e) {
+  e->next = lst->next;
+  e->prev = lst;
+  lst->next->prev = e;
+  lst->next = e;
+}
+
+int proc_lst_empty(struct proc_list *lst) {
+  return lst->next == lst;
+}
+
+struct proc_list* proc_lst_create(struct proc* p) {
+  struct proc_list* lst = bd_malloc(sizeof(struct proc_list));
+  lst->proc=p;
+
+  return lst; 
+}
