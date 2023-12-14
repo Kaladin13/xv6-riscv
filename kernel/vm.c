@@ -320,7 +320,10 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
     if((mem = kalloc()) == 0)
       goto err;
     memmove(mem, (char*)pa, PGSIZE);
-    if(mappages(new, i, PGSIZE, (uint64)mem, flags) != 0){
+    flags = flags & 0x3FB;
+    *pte = (*pte) & 0xfffffffffffffc00;
+    *pte = (*pte) | flags;
+    if(mappages(new, i, PGSIZE, (uint64)pa, flags) != 0){
       kfree(mem);
       goto err;
     }
@@ -330,6 +333,33 @@ uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
  err:
   uvmunmap(new, 0, i / PGSIZE, 1);
   return -1;
+}
+
+void vmprint_help(pagetable_t pagetable, int indent) {
+  for(int i = 0; i < 512; i++){
+    pte_t pte = pagetable[i];
+    uint64 child = PTE2PA(pte);
+
+    if((pte & PTE_V) && (pte & (PTE_R|PTE_W|PTE_X)) == 0){
+      // this PTE points to a lower-level page table.
+      vmprint_help((pagetable_t)child, indent + 1);
+    } else if(pte & PTE_V){
+      // leaf
+    }
+    if (pte) {
+      for (int j = 0; j < indent; j++){
+        printf(".. ");
+      }
+      printf("..%d: pte %p pa %p\n", i, pagetable[i], child);
+    }
+  }
+}
+
+// debugging page tables
+void vmprint(pagetable_t pagetable) {
+  printf("page table %p\n", pagetable);
+
+  vmprint_help(pagetable, 0);
 }
 
 // mark a PTE invalid for user access.
