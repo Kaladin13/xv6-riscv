@@ -9,6 +9,8 @@
 #include "riscv.h"
 #include "defs.h"
 
+#define MAX_COW_PAGES 65536
+
 void freerange(void *pa_start, void *pa_end);
 
 extern char end[]; // first address after kernel.
@@ -22,6 +24,44 @@ struct {
   struct spinlock lock;
   struct run *freelist;
 } kmem;
+
+struct {
+  ushort ref_count;
+  uint64 pa;
+} blocked_pages[MAX_COW_PAGES] = {{0, 0}};
+
+ushort* get_ref(uint64 pa) {
+  for (int i = 0; i < MAX_COW_PAGES; i++) {
+    if (blocked_pages[i].pa == pa) {
+      return &blocked_pages[i].ref_count;
+    }
+  }
+  
+  return 0;
+}
+
+int create_page_count(uint64 pa) {
+  for (int i = 0; i < MAX_COW_PAGES; i++) {
+    if (blocked_pages[i].pa == 0) {
+      blocked_pages[i].pa = pa;
+      blocked_pages[i].ref_count = 2;
+
+      return 0;
+    }
+  }
+
+  return -1;
+}
+
+void free_page_count(uint64 pa) {
+  for (int i = 0; i < MAX_COW_PAGES; i++) {
+    if (blocked_pages[i].pa == pa) {
+      blocked_pages[i].pa = 0;
+      blocked_pages[i].ref_count = 0;
+      return;
+    }
+  }
+}
 
 void
 kinit()
