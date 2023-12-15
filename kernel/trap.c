@@ -67,12 +67,49 @@ usertrap(void)
     syscall();
   } else if((which_dev = devintr()) != 0){
     // ok
+  } else if (r_scause() == 13 || r_scause() == 15) {
+    uint64 addr = PGROUNDDOWN(r_stval());
+    pte_t *pte;
+    uint64 pa;
+    uint flags;
+    char *mem;
+
+    if((pte = walk(p->pagetable, addr, 0)) == 0)
+      panic("usertrap(): pte should exist");
+    if((*pte & PTE_V) == 0)
+      panic("usertrap(): page not present");
+    pa = PTE2PA(*pte);
+    flags = PTE_FLAGS(*pte);
+
+    ushort* ref = get_ref(pa);
+    if (!ref){
+        panic("usertrap(): broken cow page");
+    }
+    
+    if (*ref == 1) {
+      // unblock
+        *pte = ((*pte) & 0xfffffffffffffEFF) | PTE_W;
+        free_page_count(pa);
+        goto check_killed;
+    }
+
+    if((mem = kalloc()) == 0) {
+      setkilled(p);
+      exit(-1);
+    }
+    memmove(mem, (char*)pa, PGSIZE);
+    if(mappages(p->pagetable, addr, PGSIZE, (uint64)mem, (flags & 0x2FF) | PTE_W) != 0){
+      panic("usertrap(): unexpected bad");
+    }
+
+    (*ref)--;
   } else {
-    printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
+    printf("usertrap(): unexpected scause %d pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);
   }
 
+check_killed:
   if(killed(p))
     exit(-1);
 
