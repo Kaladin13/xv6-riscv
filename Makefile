@@ -152,6 +152,7 @@ UPROGS=\
 	$U/_dumptests\
 	$U/_dump2tests\
 	$U/_cowtest\
+	$U/_lazytests\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
