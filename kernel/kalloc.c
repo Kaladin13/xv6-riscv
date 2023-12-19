@@ -66,8 +66,8 @@ void free_page_count(uint64 pa) {
 void
 kinit()
 {
-  initlock(&kmem.lock, "kmem");
-  freerange(end, (void*)PHYSTOP);
+  char* p = (char*)PGROUNDUP((uint64)end);
+  bd_init(p, (void*)PHYSTOP);
 }
 
 // Free the page of physical memory pointed at by v,
