@@ -42,9 +42,18 @@ sys_sbrk(void)
   int n;
 
   argint(0, &n);
+
+  // vmprint(myproc()->pagetable);
+
   addr = myproc()->sz;
-  if(growproc(n) < 0)
-    return -1;
+  if (n > 0) {
+    myproc()->sz += n;
+  } else {
+    n = uvmdealloc(myproc()->pagetable, addr, addr + n);
+    myproc()->sz = n;
+  }
+  // if(growproc(n) < 0)
+  //   return -1;
   return addr;
 }
 

@@ -29,13 +29,11 @@ simpletest()
     for(char *q = p; q < p + sz; q += 4096){
         *(int*)q = getpid();
     }
-
     int pid = fork();
     if(pid < 0){
         printf("fork() failed\n");
         exit(-1);
     }
-
     if(pid == 0)
         exit(0);
 
@@ -67,8 +65,8 @@ threetest()
         printf("sbrk(%d) failed\n", sz);
         exit(-1);
     }
-
     pid1 = fork();
+
     if(pid1 < 0){
         printf("fork failed\n");
         exit(-1);

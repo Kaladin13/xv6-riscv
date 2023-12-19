@@ -74,10 +74,25 @@ usertrap(void)
     uint flags;
     char *mem;
 
-    if((pte = walk(p->pagetable, addr, 0)) == 0)
-      panic("usertrap(): pte should exist");
-    if((*pte & PTE_V) == 0)
-      panic("usertrap(): page not present");
+    if (r_stval() > p->sz) {
+      setkilled(p);
+      exit(-1);
+    }
+
+    if((pte = walk(p->pagetable, addr, 0)) == 0 || (*pte & PTE_V) == 0) {
+      // panic("usertrap(): page not present");
+      // lazy allocation moment
+      if((mem = kalloc()) == 0) {
+        setkilled(p);
+        exit(-1);
+      }
+      memset(mem, 0, PGSIZE);
+      if (mappages(p->pagetable, addr, PGSIZE, (uint64)mem, PTE_R | PTE_W | PTE_V | PTE_U) < 0) {
+        panic("usertrap(): unexpected mappages error");
+      }
+      goto check_killed;
+    }
+      
     pa = PTE2PA(*pte);
     flags = PTE_FLAGS(*pte);
 
